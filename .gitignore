@@ -1,0 +1,5 @@
+/gen_json/
+.idea/
+*.json
+*.txt
+*.xlsx
