@@ -9,6 +9,13 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 
 DATA_START_ROW = 5
 DATA_OFFSET = 9
+MONTH_START_COLUMN = 2
+MONTH_END_COLUMN = 13
+TAXES_COUNT = 8
+HEAD = (1, 2, 6, 8, 10)
+
+UNP = 700069297
+RECORDS_PER_PACK = 200
 
 
 @dataclass
@@ -127,19 +134,16 @@ def create_raw_data_list(excel_filename: str) -> list[RawData]:
 
     for xlsx_row in range(DATA_START_ROW, max_rows + 1, DATA_OFFSET):
         months = []
-        # TODO: перенести в константы 2 и 14
-        for month in range(2, 14):
+        for month in range(MONTH_START_COLUMN, MONTH_END_COLUMN + 1):
             months.append(
                 Month(
-                    # TODO: перенести 8 в константы
-                    *[sheet.cell(row=xlsx_row + index + 1, column=month).value or 0 for index in range(8)]
+                    *[sheet.cell(row=xlsx_row + index + 1, column=month).value or 0 for index in range(TAXES_COUNT)]
                 )
             )
 
         data.append(
             RawData(
-                # TODO: перенести (1, 2, 6, 8, 10) в константы
-                *[sheet.cell(row=xlsx_row, column=i).value for i in (1, 2, 6, 8, 10)],
+                *[sheet.cell(row=xlsx_row, column=i).value for i in HEAD],
                 months
             )
         )
@@ -187,20 +191,18 @@ def batch(iterable, n=1):
 
 
 def make_files(data: list[RawData]):
-    # TODO: вынести в константы УНП И максимальное колл записей(200)
-    unp = 700069297
-    pages_count = len(data) // 200
+    pages_count = len(data) // RECORDS_PER_PACK
 
     if pages_count > 0:
-        for part, group in enumerate(batch(data, 200)):
+        for part, group in enumerate(batch(data, RECORDS_PER_PACK)):
             part_data = to_dict(group)
-            filename = f'gen_json/{generate_filename(unp, 1, 0, part + 1)}'
+            filename = f'gen_json/{generate_filename(UNP, 1, 0, part + 1)}'
 
             with open(filename, 'w', encoding='utf-8') as file:
                 json.dump(part_data, file, indent=4, ensure_ascii=False)
     else:
         data = to_dict(data)
-        filename = f'gen_json/{generate_filename(unp, 1, 0)}'
+        filename = f'gen_json/{generate_filename(UNP, 1, 0)}'
 
         with open(filename, 'w', encoding='utf-8') as file:
             json.dump(data, file, indent=4, ensure_ascii=False)
