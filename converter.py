@@ -18,6 +18,12 @@ UNP = 700069297
 RECORDS_PER_PACK = 200
 
 
+def batch(iterable, n=1):
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield iterable[ndx:min(ndx + n, l)]
+
+
 @dataclass
 class Month:
     d_201: float
@@ -121,92 +127,85 @@ class RawData:
         }
 
 
-# TODO: перенести функции в класс
 class Converter:
-    ...
 
+    @staticmethod
+    def create_raw_data_list(excel_filename: str) -> list[RawData]:
+        data: list[RawData] = []
+        wb = openpyxl.load_workbook(excel_filename)
+        sheet = wb.active
+        max_rows = sheet.max_row
 
-def create_raw_data_list(excel_filename: str) -> list[RawData]:
-    data: list[RawData] = []
-    wb = openpyxl.load_workbook(excel_filename)
-    sheet = wb.active
-    max_rows = sheet.max_row
+        for xlsx_row in range(DATA_START_ROW, max_rows + 1, DATA_OFFSET):
+            months = []
+            for month in range(MONTH_START_COLUMN, MONTH_END_COLUMN + 1):
+                months.append(
+                    Month(
+                        *[sheet.cell(row=xlsx_row + index + 1, column=month).value or 0 for index in range(TAXES_COUNT)]
+                    )
+                )
 
-    for xlsx_row in range(DATA_START_ROW, max_rows + 1, DATA_OFFSET):
-        months = []
-        for month in range(MONTH_START_COLUMN, MONTH_END_COLUMN + 1):
-            months.append(
-                Month(
-                    *[sheet.cell(row=xlsx_row + index + 1, column=month).value or 0 for index in range(TAXES_COUNT)]
+            data.append(
+                RawData(
+                    *[sheet.cell(row=xlsx_row, column=i).value for i in HEAD],
+                    months=months
                 )
             )
 
-        data.append(
-            RawData(
-                *[sheet.cell(row=xlsx_row, column=i).value for i in HEAD],
-                months
-            )
-        )
+        return data
 
-    return data
+    @staticmethod
+    def to_dict(data: list[RawData]) -> dict:
+        current_time = datetime.datetime.now()
+        formatted_time = current_time.strftime("%Y-%m-%dT%H:%M:%S")
 
-
-def to_dict(rawdata: list[RawData]) -> dict:
-    current_time = datetime.datetime.now()
-    formatted_time = current_time.strftime("%Y-%m-%dT%H:%M:%S")
-
-    return {
-        'pckagent': {
-            'docagent': [person.to_dict() for person in rawdata],
-            'pckagentinfo': {
-                'dcreate': formatted_time,
-                'ngod': current_time.year,
-                'nmns': 741,
-                'nmnsf': 741,
-                'ntype': 1,
-                'vexec': 'Буйко Т.С.',
-                'vphn': '72-30-50',
-                'vunp': '700069297'
+        return {
+            'pckagent': {
+                'docagent': [person.to_dict() for person in data],
+                'pckagentinfo': {
+                    'dcreate': formatted_time,
+                    'ngod': current_time.year,
+                    'nmns': 741,
+                    'nmnsf': 741,
+                    'ntype': 1,
+                    'vexec': 'Буйко Т.С.',
+                    'vphn': '72-30-50',
+                    'vunp': '700069297'
+                }
             }
         }
-    }
 
+    @staticmethod
+    def generate_filename(unp, form_type, department_code, part_number=None) -> str:
+        current_time = datetime.datetime.now()
+        formatted_time = current_time.strftime("%Y%m%d%H%M%S")
+        filename = f"D{unp}_{current_time.year}_{form_type}_{department_code}_{formatted_time}"
 
-def generate_filename(unp, form_type, department_code, part_number=None) -> str:
-    current_time = datetime.datetime.now()
-    formatted_time = current_time.strftime("%Y%m%d%H%M%S")
-    filename = f"D{unp}_{current_time.year}_{form_type}_{department_code}_{formatted_time}"
+        if part_number is not None:
+            filename += f"_{part_number:04d}"
 
-    if part_number is not None:
-        filename += f"_{part_number:04d}"
+        filename += ".json"
+        return filename
 
-    filename += ".json"
-    return filename
+    def make_files(self, data: list[RawData]):
+        pages_count = len(data) // RECORDS_PER_PACK
 
+        if pages_count > 0:
+            for part, group in enumerate(batch(data, RECORDS_PER_PACK)):
+                part_data = self.to_dict(group)
+                filename = f'gen_json/{self.generate_filename(UNP, 1, 0, part + 1)}'
 
-def batch(iterable, n=1):
-    l = len(iterable)
-    for ndx in range(0, l, n):
-        yield iterable[ndx:min(ndx + n, l)]
-
-
-def make_files(data: list[RawData]):
-    pages_count = len(data) // RECORDS_PER_PACK
-
-    if pages_count > 0:
-        for part, group in enumerate(batch(data, RECORDS_PER_PACK)):
-            part_data = to_dict(group)
-            filename = f'gen_json/{generate_filename(UNP, 1, 0, part + 1)}'
+                with open(filename, 'w', encoding='utf-8') as file:
+                    json.dump(part_data, file, indent=4, ensure_ascii=False)
+        else:
+            data = self.to_dict(data)
+            filename = f'gen_json/{self.generate_filename(UNP, 1, 0)}'
 
             with open(filename, 'w', encoding='utf-8') as file:
-                json.dump(part_data, file, indent=4, ensure_ascii=False)
-    else:
-        data = to_dict(data)
-        filename = f'gen_json/{generate_filename(UNP, 1, 0)}'
-
-        with open(filename, 'w', encoding='utf-8') as file:
-            json.dump(data, file, indent=4, ensure_ascii=False)
+                json.dump(data, file, indent=4, ensure_ascii=False)
 
 
 if __name__ == '__main__':
-    make_files(create_raw_data_list('доход2023.xlsx'))
+    convert_rti = Converter()
+    rawdata = Converter.create_raw_data_list('доход2023.xlsx')
+    convert_rti.make_files(rawdata)
