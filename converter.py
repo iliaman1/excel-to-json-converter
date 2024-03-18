@@ -74,12 +74,22 @@ class RawData:
             for index in range(12)
         ]
 
+    def generate_tar5(self) -> list[dict]:
+        return [
+            {
+                'nmonth': index + 1,
+                'nsummonth': self.months[index].mat_pom,
+                'tar5sum': [{'ncode': 500, 'nsum': self.months[index].mat_pom}]
+            }
+            for index in range(12)
+        ]
+
     def generate_tar7(self) -> list[dict]:
         return [
             {
                 'nmonth': index + 1,
                 'nsummonth': self.months[index].b_600,
-                'tar7sum': [{'ncode': 600, 'nsum': self.months[index].b_600}]
+                'tar7sum': [{'ncode': 600, 'nsum': self.months[index].b_600, 'nsumv': self.months[index].b_600}]
             }
             for index in range(12)
         ]
@@ -111,7 +121,7 @@ class RawData:
             'ntsumbank': 0,
             'ntsumcalcincome': round(sum([nalog.tax for nalog in self.months]), 2),
             'ntsumcalcincomediv': 0,
-            'ntsumexemp': 0,
+            'ntsumexemp': round(sum([nalog.mat_pom for nalog in self.months]), 2),
             'ntsumincome': round(sum([nalog.d_201 for nalog in self.months]), 2),
             'ntsumnotcalc': 0,
             'ntsumprof': 0,
@@ -119,10 +129,11 @@ class RawData:
             'ntsumsec': 0,
             'ntsumsoc': 0,
             'ntsumtrust': 0,
-            'ntsumwithincome': 0,
+            'ntsumwithincome': round(sum([nalog.tax for nalog in self.months]), 2),
             'ntsumwithincomediv': 0,
             'tar14': self.generate_tar14(),
             'tar4': self.generate_tar4(),
+            'tar5': self.generate_tar5(),
             'tar7': self.generate_tar7()
         }
 
