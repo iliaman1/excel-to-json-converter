@@ -30,7 +30,7 @@ class Month:
     tax: float
     b_610: float
     b_600: float
-    B_620: float
+    b_620: float
     c_650: float
     o_660: float
     mat_pom: float
@@ -88,8 +88,25 @@ class RawData:
         return [
             {
                 'nmonth': index + 1,
-                'nsummonth': self.months[index].b_600,
-                'tar7sum': [{'ncode': 600, 'nsum': self.months[index].b_600, 'nsumv': self.months[index].b_600}]
+                'nsummonth': sum([self.months[index].b_600, self.months[index].b_610, self.months[index].b_620]),
+                'tar7sum': [
+                    {'ncode': 600, 'nsumv': self.months[index].b_600},
+                    {'ncode': 610, 'nsumv': self.months[index].b_610},
+                    {'ncode': 620, 'nsumv': self.months[index].b_620}
+                ]
+            }
+            for index in range(12)
+        ]
+
+    def generate_tar9(self) -> list[dict]:
+        return [
+            {
+                'nmonth': index + 1,
+                'nsummonth': sum([self.months[index].c_650, self.months[index].o_660]),
+                'tar9sum': [
+                    {'ncode': 650, 'nsumv': self.months[index].c_650},
+                    {'ncode': 660, 'nsumv': self.months[index].o_660}
+                ]
             }
             for index in range(12)
         ]
@@ -134,7 +151,8 @@ class RawData:
             'tar14': self.generate_tar14(),
             'tar4': self.generate_tar4(),
             'tar5': self.generate_tar5(),
-            'tar7': self.generate_tar7()
+            'tar7': self.generate_tar7(),
+            'tar9': self.generate_tar9()
         }
 
 
@@ -175,7 +193,7 @@ class Converter:
                 'docagent': [person.to_dict() for person in data],
                 'pckagentinfo': {
                     'dcreate': formatted_time,
-                    'ngod': current_time.year,
+                    'ngod': 2023,
                     'nmns': 741,
                     'nmnsf': 741,
                     'ntype': 1,
