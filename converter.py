@@ -68,8 +68,8 @@ class RawData:
         return [
             {
                 'nmonth': index + 1,
-                'nsummonth': self.months[index].d_201,
-                'tar4sum': [{'ncode': 201, 'nsum': self.months[index].d_201}]
+                'nsummonth': round(self.months[index].d_201, 2),
+                'tar4sum': [{'ncode': 201, 'nsum': round(self.months[index].d_201, 2)}]
             }
             for index in range(12)
         ]
@@ -78,8 +78,8 @@ class RawData:
         return [
             {
                 'nmonth': index + 1,
-                'nsummonth': self.months[index].mat_pom,
-                'tar5sum': [{'ncode': 500, 'nsum': self.months[index].mat_pom}]
+                'nsummonth': round(self.months[index].mat_pom, 2),
+                'tar5sum': [{'ncode': 500, 'nsum': round(self.months[index].mat_pom, 2)}]
             }
             for index in range(12)
         ]
@@ -88,11 +88,12 @@ class RawData:
         return [
             {
                 'nmonth': index + 1,
-                'nsummonth': sum([self.months[index].b_600, self.months[index].b_610, self.months[index].b_620]),
+                'nsummonth': round(sum([self.months[index].b_600, self.months[index].b_610, self.months[index].b_620]),
+                                   2),
                 'tar7sum': [
-                    {'ncode': 600, 'nsumv': self.months[index].b_600},
-                    {'ncode': 610, 'nsumv': self.months[index].b_610},
-                    {'ncode': 620, 'nsumv': self.months[index].b_620}
+                    {'ncode': 600, 'nsumv': round(self.months[index].b_600, 2)},
+                    {'ncode': 610, 'nsumv': round(self.months[index].b_610, 2)},
+                    {'ncode': 620, 'nsumv': round(self.months[index].b_620, 2)}
                 ]
             }
             for index in range(12)
@@ -102,10 +103,10 @@ class RawData:
         return [
             {
                 'nmonth': index + 1,
-                'nsummonth': sum([self.months[index].c_650, self.months[index].o_660]),
+                'nsummonth': round(sum([self.months[index].c_650, self.months[index].o_660]), 2),
                 'tar9sum': [
-                    {'ncode': 650, 'nsumv': self.months[index].c_650},
-                    {'ncode': 660, 'nsumv': self.months[index].o_660}
+                    {'ncode': 650, 'nsumv': round(self.months[index].c_650, 2)},
+                    {'ncode': 660, 'nsumv': round(self.months[index].o_660, 2)}
                 ]
             }
             for index in range(12)
@@ -116,7 +117,7 @@ class RawData:
             {
                 'nmonth': index + 1,
                 'nsumdiv': 0,
-                'nsumt': self.months[index].tax
+                'nsumt': round(self.months[index].tax, 2)
             }
             for index in range(12)
         ]
@@ -236,5 +237,5 @@ class Converter:
 
 if __name__ == '__main__':
     convert_rti = Converter()
-    rawdata = Converter.create_raw_data_list('доход2023.xlsx')
+    rawdata = Converter.create_raw_data_list('доход2023_3.xlsx')
     convert_rti.make_files(rawdata)
